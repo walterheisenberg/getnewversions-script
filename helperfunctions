@@ -1,0 +1,147 @@
+#!/bin/bash
+KODI_HOST="$(ip addr show | awk '/inet / {print $2}' | cut -d/ -f1 | awk 'NR==2{print $1}')"
+if [ "$KODI_HOST" = "" ]; then
+    KODI_HOST="192.168.178.58"
+    echo "KODI_HOST is set hardcoded to $KODI_HOST"
+    echo "this is due to 'ip addr show' is not working!"
+fi
+
+KODI_PORT="8080"
+KODI_TITLE="Update $OUTPUT_DIR"
+ZIPFILE="/tmp/$OUTPUT"
+TMPDIR="/tmp/$KODI_TARGET"
+
+check_variables() {
+	# check whether the variables are empty to prevent deleting anything important, e.g. /
+	if [ -z $KODI_TARGET ]; then 
+        echo "A variable does not exist: KODI_TARGET: $KODI_TARGET"
+        echo "setting to '$(basename "$0")'"
+        KODI_TARGET="$(basename "$0")"
+    fi
+    if [ -z $TMPDIR ]; then
+        echo "A variable does not exist: TMPDIR: $TMPDIR"
+        exit 1
+    fi
+}
+
+_osdkodi() {
+	# info, warning or error
+	KODI_IMAGE="info"
+
+	KODI_DISPLAYTIME=5000   # in millisec
+
+	KODI_MESSAGE="$1"
+	#echo "osdkodi started"
+	curl -fs -H "Content-Type: application/json" -d '{"jsonrpc":"2.0","method":"GUI.ShowNotification","params":{"title":"'"$KODI_TITLE"'","message":"'"$KODI_MESSAGE"'","image":"'"$KODI_IMAGE"'","displaytime":'"$KODI_DISPLAYTIME"'},"id":1}' http://$KODI_HOST:$KODI_PORT/jsonrpc
+	echo
+	#echo "osdkodi before sleep"
+	sleep $(( ${KODI_DISPLAYTIME} / 1000 / 5 ))
+}
+
+create_tmp_dir() {
+	check_variables
+	
+	echo "function create_tmp_dir(): : $TMPDIR"
+	
+	if [ ! -d $TMPDIR ]; then
+		mkdir -p $TMPDIR
+	else
+		# remove existing dirs in $TMPDIR
+		rm -Rf $TMPDIR/*
+	fi
+}
+
+clear_tmp() {
+	rm $ZIPFILE
+	rm -Rf $TMPDIR
+	sleep 5
+	_osdkodi "reloading skin ..."
+	sleep 5
+	kodi-send --action="XBMC.ReloadSkin()"
+}
+
+exit_debug() {
+	echo "exit here for debugging ..."
+	exit 0
+}
+
+download_zip() {
+	if [ ! -f $ZIPFILE ]; then
+		_osdkodi "$OUTPUT_DIR downloading ..."
+		wget -q $GITHUB_SOURCE -O $ZIPFILE && _osdkodi "$OUTPUT_DIR downloaded"
+	else
+		echo "$ZIPFILE found! No need to DL"
+	fi
+}
+
+################################################################
+#
+#   name      : _log
+#   parameter   : $1 = logmessage
+#   return      : none
+#
+_log() {
+	echo "$(date '+[%Y-%m-%d %H:%M:%S]') $(basename "$0"): $1"
+	echo "$(date '+[%Y-%m-%d %H:%M:%S]') $(basename "$0"): $1" >> $LOGFILE
+}
+
+led() {
+	usage() {
+		echo "usage: led [power|lan|wifi] [on|off]"
+	}
+	if [ ! $# -ge 2 ]; then
+		usage
+		return 1
+	else
+		case "$1" in
+			power)
+				LED="powerled"
+				;;
+			lan)
+				LED="ethled"
+				;;
+			wifi)
+				LED="wifiled"
+				;;
+			*)
+				echo "'$1' not found!"
+				usage
+				return 1
+				;;
+		esac
+		
+		case "$2" in
+			on)
+				BRIGHTNESS="255"
+				BLINK="0"
+				;;
+			off)
+				BRIGHTNESS="0"
+				BLINK="0"
+				;;
+			blink)
+				BLINK="1"
+				;;
+			*)
+				echo "'$2' not found!"
+				usage
+				return 1
+				;;
+		esac
+	fi
+	if [ "$BLINK" = "1" ]; then
+		# read actual value
+		ACTUAL_VALUE="$(cat /sys/class/leds/wetek\:blue\:${LED}/brightness)"
+		for I in $(seq 1 $3); do
+			echo "0" > /sys/class/leds/wetek\:blue\:${LED}/brightness
+			sleep 0.5
+			echo "255" > /sys/class/leds/wetek\:blue\:${LED}/brightness
+			sleep 0.5
+		done
+		# restore actual value
+		echo "${actual}" > /sys/class/leds/wetek\:blue\:${LED}/brightness
+		return 1
+	fi
+		
+	echo "${BRIGHTNESS}" > /sys/class/leds/wetek\:blue\:${LED}/brightness 
+}

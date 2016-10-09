@@ -1,0 +1,26 @@
+#!/bin/bash
+OUTPUT="script.skinshortcuts-master.zip"
+OUTPUT_DIR="skinshortcuts"
+KODI_TARGET="script.skinshortcuts"
+GITHUB_SOURCE="https://github.com/BigNoid/script.skinshortcuts/archive/master.zip"
+
+# import helperfunctions
+. helperfunctions
+
+create_tmp_dir
+
+download_zip
+
+if unzip $ZIPFILE -d $TMPDIR/$OUTPUT_DIR; then
+	echo "unzip successful!"	
+	
+	echo "DEBUG: TMPDIR/{OUTPUT_DIR}/{OUTPUT_DIR}: $TMPDIR/${OUTPUT_DIR}/${OUTPUT_DIR}"
+	
+	if cp -R $TMPDIR/${OUTPUT_DIR}/${KODI_TARGET}-master/* /storage/.kodi/addons/$KODI_TARGET/; then
+		echo "$TMPDIR/${OUTPUT_DIR}/${KODI_TARGET}-master copied"
+		_osdkodi "$OUTPUT_DIR copied"
+	fi
+fi
+
+clear_tmp
+

@@ -1,0 +1,26 @@
+#!/bin/bash
+OUTPUT="skinhelper_master.zip"
+OUTPUT_DIR="skinhelper"
+KODI_TARGET="script.skin.helper.service"
+GITHUB_SOURCE="https://github.com/marcelveldt/script.skin.helper.service/archive/master.zip"
+
+# import helperfunctions
+. helperfunctions
+
+create_tmp_dir
+
+download_zip
+
+if unzip $ZIPFILE -d $TMPDIR/$OUTPUT_DIR; then
+	echo "unzip successful!"	
+	
+	echo "DEBUG: TMPDIR/{OUTPUT_DIR}/{OUTPUT_DIR}: $TMPDIR/${OUTPUT_DIR}/${OUTPUT_DIR}"
+	
+	if cp -R $TMPDIR/${OUTPUT_DIR}/${KODI_TARGET}-master/* /storage/.kodi/addons/$KODI_TARGET/; then
+		echo "$TMPDIR/${OUTPUT_DIR}/${KODI_TARGET}-master copied"
+		_osdkodi "$OUTPUT_DIR copied"
+	fi
+fi
+
+clear_tmp
+

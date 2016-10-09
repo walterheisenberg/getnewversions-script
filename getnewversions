@@ -1,0 +1,45 @@
+#!/bin/bash
+LOGFILE="/var/log/$(basename "$0").log"
+DIRNAME="$(dirname "$0")"
+BASENAME="$(basename "$0")"
+
+# import helperfunctions
+if [ -f ./helperfunctions ]; then
+	source ./helperfunctions
+else
+	echo "helperfunctions not found in $DIRNAME"
+	echo "exiting ..."
+fi
+
+case "$1" in
+	-l|-list)
+		echo "available packages:"
+		for ENTRY in "$DIRNAME/$BASENAME.d"/*; do
+			echo "  ${ENTRY##*/}"
+		done
+		;;
+	-h|--h|--help)
+		echo "usage: $BASENAME [OPTIONS|\$packagename]"
+		echo "      -l|-list"
+		echo "               this lists all packages available"
+		echo
+		echo "      -h||--h|--help"
+		echo "               this helptext"
+		;;
+	*)
+		if [ ! -z $DIRNAME/$BASENAME.d/$1 ]; then
+			if [ -f "$DIRNAME/$BASENAME.d/$1" ]; then
+				. $DIRNAME/$BASENAME.d/$1
+				
+			else
+				echo "The file '$DIRNAME/$BASENAME.d/$1' is not existant!"
+				echo "exiting here ..."
+			fi
+			exit 0
+		fi
+
+		for I in $DIRNAME/$BASENAME.d/*; do
+			. $DIRNAME/$BASENAME.d/$I
+		done
+		;;
+esac

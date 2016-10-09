@@ -1,0 +1,48 @@
+#!/bin/bash
+GITHUBBRANCH="master"
+OUTPUT="aeonnox_${GITHUBBRANCH}.zip"
+OUTPUT_DIR="Aeon-Nox-SiLVO"
+KODI_TARGET="skin.aeon.nox.silvo"
+GITHUB_SOURCE="https://github.com/mikesilvo164/Aeon-Nox-SiLVO/archive/${GITHUBBRANCH}.zip"
+
+# import helperfunctions
+source /storage/.kodi/userdata/scripts/helperfunctions
+
+create_tmp_dir
+
+download_zip
+
+# # copy including media- and extras-folder (option: -m")
+# # this us usefull if the skin got a massive update
+# # note: I created a symlink for the media-folder, so i can use one media folder for vanilla Aeon Nox5 and for SiLVO
+# if [ "$1" = "-m" ]; then
+# 	# extract all
+# 	if unzip $ZIPFILE -d $TMPDIR/$OUTPUT_DIR; then
+# 		echo "unzip successful!"
+# 		
+# 		_osdkodi "Copy $OUTPUT_DIR media folder"
+# 		cp -R $TMPDIR/$OUTPUT_DIR/${OUTPUT_DIR}-${GITHUBBRANCH}/media/* /storage/.kodi/addons/skin.addon.media
+# 	else
+# 		_osdkodi "there was an error while extracting!"
+# 	fi
+# else
+# 	echo "unzipping ..."
+# 	if unzip -q $ZIPFILE -d $TMPDIR/$OUTPUT_DIR -x "$OUTPUT_DIR-${GITHUBBRANCH}/media/*" "$OUTPUT_DIR-${GITHUBBRANCH}/extras/*" "$OUTPUT_DIR-${GITHUBBRANCH}/21x9/*" "$OUTPUT_DIR-${GITHUBBRANCH}/themes/*"; then
+# 	#if unzip $ZIPFILE -d $TMPDIR/$OUTPUT_DIR; then
+# 		echo "unzip successful!"
+# 	fi
+# fi
+
+# extract all
+if ! unzip $ZIPFILE -d $TMPDIR/$OUTPUT_DIR; then
+    _osdkodi "there was an error while extracting!"
+fi
+
+if cp -R $TMPDIR/${OUTPUT_DIR}/${OUTPUT_DIR}-${GITHUBBRANCH}/* /storage/.kodi/addons/$KODI_TARGET/; then
+	echo "$TMPDIR/${OUTPUT_DIR}/${OUTPUT_DIR}-${GITHUBBRANCH} copied"
+	_osdkodi "$OUTPUT_DIR copied"
+	
+	# cp -R /storage/.kodi/addons/newfiles_for_nox/* /storage/.kodi/addons/$KODI_TARGET/
+	
+	clear_tmp
+fi
